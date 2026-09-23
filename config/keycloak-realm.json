@@ -1,0 +1,91 @@
+{
+  "realm": "stock-app",
+  "enabled": true,
+  "displayName": "Stock App",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "sslRequired": "external",
+  "defaultSignatureAlgorithm": "RS256",
+  "accessTokenLifespan": 300,
+
+  "roles": {
+    "realm": [
+      { "name": "STOCK_ADMIN",   "description": "Lecture + ecriture + suppression (categories, produits, mouvements)" },
+      { "name": "STOCK_MANAGER", "description": "Lecture + ecriture (POST/PUT), pas de suppression" },
+      { "name": "STOCK_VIEWER",  "description": "Lecture seule (GET)" },
+      { "name": "default-roles-stock-app", "description": "Rôles par defaut du realm" }
+    ]
+  },
+
+  "defaultRoles": ["default-roles-stock-app"],
+
+  "users": [
+    {
+      "id": "a1000000-0000-0000-0000-000000000001",
+      "username": "alice",
+      "email": "alice@stock.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Alice",
+      "lastName": "Admin",
+      "credentials": [ { "type": "password", "value": "admin123", "temporary": false } ],
+      "realmRoles": [ "default-roles-stock-app", "STOCK_ADMIN" ],
+      "attributes": { "locale": "en" }
+    },
+    {
+      "id": "a1000000-0000-0000-0000-000000000002",
+      "username": "bob",
+      "email": "bob@stock.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Bob",
+      "lastName": "Manager",
+      "credentials": [ { "type": "password", "value": "manager123", "temporary": false } ],
+      "realmRoles": [ "default-roles-stock-app", "STOCK_MANAGER", "STOCK_VIEWER" ],
+      "attributes": { "locale": "en" }
+    },
+    {
+      "id": "a1000000-0000-0000-0000-000000000003",
+      "username": "carol",
+      "email": "carol@stock.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Carol",
+      "lastName": "Viewer",
+      "credentials": [ { "type": "password", "value": "viewer123", "temporary": false } ],
+      "realmRoles": [ "default-roles-stock-app", "STOCK_VIEWER" ],
+      "attributes": { "locale": "en" }
+    }
+  ],
+
+  "clients": [
+    {
+      "clientId": "stock-api",
+      "name": "Stock API (front-end dev)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:3000/callback",
+        "http://localhost:3000/*/callback"
+      ],
+      "webOrigins": [ "http://localhost:3000", "http://localhost:8080" ],
+      "defaultClientScopes": [ "openid", "profile", "email", "roles" ],
+      "optionalClientScopes": [ "offline_access" ],
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3000"
+      }
+    }
+  ],
+
+  "browserSecurityHeaders": {
+    "contentSecurityPolicyReportOnly": "",
+    "xContentTypeOptions": "nosniff"
+  }
+}

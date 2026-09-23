@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stock Control</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root { --ink: #17212b; --paper: #f4f1e8; --accent: #e76f51; --teal: #1d7874; }
+    body { background: var(--paper); color: var(--ink); }
+    .navbar { background: var(--ink); }
+    .brand-mark { color: #f4a261; letter-spacing: .08em; }
+    .hero { background: linear-gradient(120deg, #17212b 0%, #1d7874 100%); color: white; }
+    .panel { border: 0; border-radius: 1rem; box-shadow: 0 12px 30px rgba(23,33,43,.08); }
+    .stat { border-left: 4px solid var(--accent); }
+    .table thead th { color: #66727d; font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; }
+    .form-control, .form-select { border-radius: .65rem; }
+    .btn-primary { --bs-btn-bg: var(--teal); --bs-btn-border-color: var(--teal); --bs-btn-hover-bg: #155f5c; --bs-btn-hover-border-color: #155f5c; }
+    .login-shell { min-height: 100vh; display: grid; place-items: center; }
+    .muted-label { color: #74808a; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; }
+  </style>
+</head>
+<body>
+  <div id="loginView" class="login-shell container py-4">
+    <div class="row w-100 justify-content-center">
+      <div class="col-sm-10 col-md-6 col-lg-4">
+        <div class="panel bg-white p-4 p-lg-5">
+          <div class="brand-mark fw-bold mb-4">STOCK / CONTROL</div>
+          <h1 class="h3 mb-2">Piloter le stock.</h1>
+          <p class="text-secondary mb-4">Connecte-toi avec un compte Keycloak de test.</p>
+          <form id="loginForm">
+            <label class="form-label" for="username">Utilisateur</label>
+            <input id="username" class="form-control mb-3" value="alice" autocomplete="username" required>
+            <label class="form-label" for="password">Mot de passe</label>
+            <input id="password" type="password" class="form-control mb-3" value="admin123" autocomplete="current-password" required>
+            <button class="btn btn-primary w-100" type="submit">Ouvrir la console</button>
+          </form>
+          <div id="loginError" class="alert alert-danger mt-3 d-none"></div>
+          <div class="small text-secondary mt-4">Admin: alice / admin123 · Manager: bob / manager123 · Lecture: carol / viewer123</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="appView" class="d-none">
+    <nav class="navbar navbar-dark">
+      <div class="container-fluid px-4">
+        <span class="navbar-brand brand-mark fw-bold">STOCK / CONTROL</span>
+        <div class="d-flex align-items-center gap-3 text-white">
+          <span id="currentUser" class="small"></span>
+          <button id="logoutButton" class="btn btn-sm btn-outline-light">Quitter</button>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero py-5">
+      <div class="container">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-3">
+          <div><div class="muted-label text-white-50">Vue operationnelle</div><h1 class="display-6 fw-bold mb-0">Inventaire en mouvement</h1></div>
+          <span id="healthBadge" class="badge text-bg-secondary">Verification API...</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="container py-4">
+      <div id="appError" class="alert alert-danger d-none"></div>
+      <div class="row g-3 mb-4">
+        <div class="col-md-4"><div class="panel stat bg-white p-3"><div class="muted-label">Categories</div><div id="categoryCount" class="display-6 fw-bold">0</div></div></div>
+        <div class="col-md-4"><div class="panel stat bg-white p-3"><div class="muted-label">Produits</div><div id="productCount" class="display-6 fw-bold">0</div></div></div>
+        <div class="col-md-4"><div class="panel stat bg-white p-3"><div class="muted-label">Dernier chargement</div><div id="loadedAt" class="h4 mt-2">--:--</div></div></div>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <section class="panel bg-white p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h5 mb-0">Categories</h2><button class="btn btn-sm btn-outline-secondary" id="refreshCategories">Actualiser</button></div>
+            <form id="categoryForm" class="row g-2 mb-4">
+              <div class="col-md-5"><input id="categoryName" class="form-control" placeholder="Nom de categorie" required></div>
+              <div class="col-md-5"><input id="categoryDescription" class="form-control" placeholder="Description"></div>
+              <div class="col-md-2"><button class="btn btn-primary w-100" type="submit">Ajouter</button></div>
+            </form>
+            <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Nom</th><th>Description</th></tr></thead><tbody id="categoriesTable"></tbody></table></div>
+          </section>
+          <section class="panel bg-white p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h5 mb-0">Produits</h2><button class="btn btn-sm btn-outline-secondary" id="refreshProducts">Actualiser</button></div>
+            <div class="table-responsive"><table class="table align-middle"><thead><tr><th>SKU</th><th>Produit</th><th>Stock</th><th>Seuil</th></tr></thead><tbody id="productsTable"></tbody></table></div>
+          </section>
+        </div>
+
+        <div class="col-lg-5">
+          <section class="panel bg-white p-4 mb-4">
+            <h2 class="h5 mb-3">Nouveau produit</h2>
+            <form id="productForm" class="row g-2">
+              <div class="col-6"><input id="productSku" class="form-control" placeholder="SKU-001" required></div>
+              <div class="col-6"><input id="productName" class="form-control" placeholder="Nom" required></div>
+              <div class="col-12"><select id="productCategory" class="form-select" required><option value="">Categorie</option></select></div>
+              <div class="col-4"><input id="productPrice" type="number" step="0.01" min="0.01" class="form-control" placeholder="Prix" required></div>
+              <div class="col-4"><input id="productQuantity" type="number" min="0" class="form-control" placeholder="Quantite" required></div>
+              <div class="col-4"><input id="productThreshold" type="number" min="0" class="form-control" placeholder="Seuil" required></div>
+              <div class="col-12"><button class="btn btn-primary w-100" type="submit">Creer le produit</button></div>
+            </form>
+          </section>
+          <section class="panel bg-white p-4">
+            <h2 class="h5 mb-3">Mouvement de stock</h2>
+            <form id="movementForm" class="row g-2">
+              <div class="col-12"><select id="movementProduct" class="form-select" required><option value="">Produit</option></select></div>
+              <div class="col-6"><select id="movementType" class="form-select"><option value="ENTRY">Entree</option><option value="EXIT">Sortie</option></select></div>
+              <div class="col-6"><input id="movementQuantity" type="number" min="1" class="form-control" placeholder="Quantite" required></div>
+              <div class="col-12"><input id="movementReason" class="form-control" placeholder="Motif (optionnel)"></div>
+              <div class="col-12"><button class="btn btn-primary w-100" type="submit">Enregistrer le mouvement</button></div>
+            </form>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const api = "";
+    const keycloakTokenUrl = "http://localhost:8081/realms/stock-app/protocol/openid-connect/token";
+    let token = sessionStorage.getItem("stockToken");
+    let categories = [];
+    let products = [];
+
+    const $ = (id) => document.getElementById(id);
+    const showError = (message) => { $("appError").textContent = message; $("appError").classList.remove("d-none"); };
+    const clearError = () => $("appError").classList.add("d-none");
+
+    async function apiCall(path, options = {}) {
+      const response = await fetch(api + path, { ...options, headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(options.headers || {}) } });
+      const text = await response.text();
+      let body = {}; try { body = text ? JSON.parse(text) : {}; } catch { body = { message: text }; }
+      if (!response.ok) throw new Error(body.message || `Erreur HTTP ${response.status}`);
+      return body;
+    }
+
+    async function login(event) {
+      event.preventDefault(); $("loginError").classList.add("d-none");
+      const body = new URLSearchParams({ grant_type: "password", client_id: "stock-api", username: $("username").value, password: $("password").value });
+      try {
+        const response = await fetch(keycloakTokenUrl, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body });
+        const result = await response.json(); if (!response.ok) throw new Error(result.error_description || "Connexion refusee");
+        token = result.access_token; sessionStorage.setItem("stockToken", token); openApp();
+      } catch (error) { $("loginError").textContent = error.message; $("loginError").classList.remove("d-none"); }
+    }
+
+    function openApp() { $("loginView").classList.add("d-none"); $("appView").classList.remove("d-none"); loadAll(); }
+    function logout() { sessionStorage.removeItem("stockToken"); token = null; location.reload(); }
+    function fillSelects() {
+      const options = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join(""); $("productCategory").innerHTML = `<option value="">Categorie</option>${options}`;
+      const productOptions = products.map(p => `<option value="${p.id}">${p.sku} - ${p.name}</option>`).join(""); $("movementProduct").innerHTML = `<option value="">Produit</option>${productOptions}`;
+    }
+    async function loadAll() {
+      clearError(); try {
+        const health = await fetch("/actuator/health").then(r => r.json()); $("healthBadge").textContent = health.status === "UP" ? "API operationnelle" : "API degradee"; $("healthBadge").className = `badge ${health.status === "UP" ? "text-bg-success" : "text-bg-warning"}`;
+        [categories, products] = await Promise.all([apiCall("/api/v1/categories"), apiCall("/api/v1/products")]);
+        $("categoryCount").textContent = categories.length; $("productCount").textContent = products.length; $("loadedAt").textContent = new Date().toLocaleTimeString();
+        $("categoriesTable").innerHTML = categories.map(c => `<tr><td class="fw-semibold">${c.name}</td><td class="text-secondary">${c.description || "-"}</td></tr>`).join("") || `<tr><td colspan="2" class="text-secondary">Aucune categorie</td></tr>`;
+        $("productsTable").innerHTML = products.map(p => `<tr><td><code>${p.sku}</code></td><td>${p.name}</td><td class="fw-semibold">${p.quantity}</td><td>${p.alertThreshold}</td></tr>`).join("") || `<tr><td colspan="4" class="text-secondary">Aucun produit</td></tr>`;
+        fillSelects();
+      } catch (error) { showError(error.message); if (error.message.includes("401")) logout(); }
+    }
+    async function submitJson(event, path, payload) { event.preventDefault(); clearError(); try { await apiCall(path, { method: "POST", body: JSON.stringify(payload) }); event.target.reset(); await loadAll(); } catch (error) { showError(error.message); } }
+    $("loginForm").addEventListener("submit", login); $("logoutButton").addEventListener("click", logout); $("refreshCategories").addEventListener("click", loadAll); $("refreshProducts").addEventListener("click", loadAll);
+    $("categoryForm").addEventListener("submit", e => submitJson(e, "/api/v1/categories", { name: $("categoryName").value, description: $("categoryDescription").value }));
+    $("productForm").addEventListener("submit", e => submitJson(e, "/api/v1/products", { sku: $("productSku").value, name: $("productName").value, categoryId: $("productCategory").value, price: Number($("productPrice").value), quantity: Number($("productQuantity").value), alertThreshold: Number($("productThreshold").value) }));
+    $("movementForm").addEventListener("submit", e => submitJson(e, "/api/v1/stock-movements", { productId: $("movementProduct").value, type: $("movementType").value, quantity: Number($("movementQuantity").value), reason: $("movementReason").value }));
+    if (token) openApp();
+  </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "stock-api (Java 21)",
+  "image": "mcr.microsoft.com/vscode/devcontainers/java:21-java",
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "4gb"
+  },
+  "containerEnv": {
+    "SPRING_PROFILES_ACTIVE": "dev",
+    "DB_HOST": "host.docker.internal",
+    "DB_PORT": "5432",
+    "DB_NAME": "stock_db",
+    "DB_USER": "stock_user",
+    "DB_PASSWORD": "secret_dev_only",
+    "KEYCLOAK_ISSUER": "http://host.docker.internal:8081/realms/stock-app",
+    "LOG_LEVEL": "DEBUG"
+  },
+  "forwardPorts": [8080, 5432, 8081],
+  "postCreateCommand": "mkdir -p ~/.m2 && mvn -B -q dependency:go-offline || echo 'maven offline skipped'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "mtxr.sqltools",
+        "humao.rest-client",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}

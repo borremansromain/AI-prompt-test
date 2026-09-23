@@ -1,0 +1,75 @@
+# Stock Management API — reproduction reproductible (Prompt 1.2)
+# Usage sur l'hote (Docker Desktop) :  docker compose up
+#   - app      : Java 21 / Spring Boot (compile + run via Maven)  -> :8080
+#   - postgres : PostgreSQL 16                                    -> :5432
+#   - keycloak : Keycloak 26 (realm import + health)              -> :8081 (UI)
+#
+# L'app atteint ses services via les hostname du reseau compose
+# (postgres:5432, keycloak:8080). C'est le chemin principal garanti.
+name: stock-api
+
+services:
+  app:
+    image: maven:3.9-eclipse-temurin-21
+    container_name: stock-app
+    working_dir: /workspace
+    command: java -jar target/stock-api.jar
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: stock_db
+      DB_USER: stock_user
+      DB_PASSWORD: secret_dev_only
+      KEYCLOAK_ISSUER: http://localhost:8081/realms/stock-app
+      JWT_JWKS_URI: http://keycloak:8080/realms/stock-app/protocol/openid-connect/certs
+      LOG_LEVEL: DEBUG
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    volumes:
+      - .:/workspace
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: stock-postgres
+    environment:
+      POSTGRES_DB: stock_db
+      POSTGRES_USER: stock_user
+      POSTGRES_PASSWORD: secret_dev_only
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stock_user -d stock_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7
+    container_name: stock-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_PORT: "8080"
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./config/keycloak-realm.json:/opt/keycloak/data/import/realm.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/9000' 2>/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+volumes:
+  postgres_data:

@@ -1,0 +1,31 @@
+# ---- Build ----
+target/
+*.class
+*.jar
+!**/lib/*.jar
+
+# ---- Outillage local (Maven telecharge, non versionne) ----
+tools/
+
+# ---- Secrets / env ----
+.env
+*.pem
+*.key
+
+# ---- IDE ----
+.idea/
+*.iml
+.vscode/
+.vs/
+*.swp
+
+# ---- Logs ----
+*.log
+logs/
+
+# ---- MCP server ----
+mcp/node_modules/
+
+# ---- OS ----
+.DS_Store
+Thumbs.db

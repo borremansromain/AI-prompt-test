@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(setlocal *)",
+      "Bash(d)",
+      "Bash(set *)",
+      "Bash(curl *)",
+      "Bash(findstr *)",
+      "Bash(mkdir *)",
+      "Bash(dir *)",
+      "Bash(powershell *)",
+      "Bash(\"tools\\apache-maven-3.9.9\\bin\\mvn.cmd\" *)",
+      "Bash(docker compose config *)",
+      "Bash(cd *)",
+      "Bash(docker compose up *)",
+      "Bash(start *)",
+      "Bash(echo *)",
+      "Bash(where *)",
+      "Bash(docker compose ps)",
+      "Bash(docker compose logs *)"
+    ]
+  },
+  "$version": 4
+}
